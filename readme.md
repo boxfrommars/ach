@@ -13,7 +13,7 @@ Based on Laravel
     
     xu@calypso:~/ach$ php artisan serve // дополнительный параметр --port для указания конкретного порта 
 
-### commit 4252a94
+### commit 4252a94 init
 
 #### Настраиваем [определение окружения разработчика](http://laravel.com/docs/configuration#environment-configuration)
 
@@ -57,6 +57,36 @@ Note: The public assets can change overtime (because of upstream changes), it is
         "php artisan debugbar:publish"
     ],
   
+### Commit 8cb95c8 ide helper, debugbar, local enviroment
 
+#### Настраиваем базу данных
+
+Создаём базу
+
+    mysql> CREATE USER 'ach'@'localhost' IDENTIFIED BY 'ach';
+    mysql> CREATE DATABASE ach;
+    mysql> GRANT ALL PRIVILEGES ON ach . * TO 'ach'@'localhost';
+    mysql> FLUSH PRIVILEGES;
+    
+Указываем в конфигурационном файле для нашего окружения `app/config/local/database.php` настройки подключения к базе данных
+
+    'mysql' => array(
+        'driver'    => 'mysql',
+        'host'      => 'localhost',
+        'database'  => 'ach',
+        'username'  => 'ach',
+        'password'  => 'ach',
+        'charset'   => 'utf8',
+        'collation' => 'utf8_unicode_ci',
+        'prefix'    => '',
+    ),
+    
+Теперь можно перегенерировать хелпер для автодополнения
+
+    xu@calypso:~/ach$ php artisan clear-compiled
+    xu@calypso:~/ach$ php artisan ide-helper:generate
+    xu@calypso:~/ach$ php artisan optimize
+    
+### Commit 9aa9238 Настройка подключения к БД
 
     
