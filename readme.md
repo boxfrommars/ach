@@ -88,8 +88,8 @@ mysql> CREATE DATABASE ach;
 mysql> GRANT ALL PRIVILEGES ON ach . * TO 'ach'@'localhost';
 mysql> FLUSH PRIVILEGES;
 ```
-Указываем в конфигурационном файле для нашего окружения `app/config/local/database.php` настройки подключения к базе данных
 
+Указываем в конфигурационном файле для нашего окружения `app/config/local/database.php` настройки подключения к базе данных
 ```php
 'mysql' => array(
     'driver'    => 'mysql',
@@ -104,7 +104,6 @@ mysql> FLUSH PRIVILEGES;
 ```
 
 Теперь можно перегенерировать хелпер для автодополнения
-
 ```bash
 xu@calypso:~/ach$ php artisan clear-compiled
 xu@calypso:~/ach$ php artisan ide-helper:generate
@@ -116,12 +115,11 @@ xu@calypso:~/ach$ php artisan optimize
 #### Создаём миграцию для таблицы `users`
 
 Для `users` по умолчанию уже идёт модель `User`, поэтому создавть вручную её не требуется
-
 ```bash
 xu@calypso:~/ach$ php artisan migrate:make create_users_table
 ```  
-создался файл `ach/app/database/migrations/YYYY_MM_DD_SSZZZZ_create_users_table.php`, описываем в нём миграцию
 
+создался файл `ach/app/database/migrations/YYYY_MM_DD_SSZZZZ_create_users_table.php`, описываем в нём миграцию
 ```php
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -153,10 +151,14 @@ class CreateUsersTable extends Migration {
 }
 ```
 
+Применяем миграцию
+```bash
+xu@calypso:~/ach$ php artisan migrate
+```  
+
 #### Создаём модель и миграцию для таблицы `achievments`
 
 Создадим модель: файл `app/models/Achievment.php` со следующим содержимым
-
 ```php
 class Achievment extends Eloquent {
 	protected $table = 'achievments'; // в данном случае не обязательно точно указывать таблицу, так как её имя -- множественное число от имени класса модели
@@ -164,13 +166,11 @@ class Achievment extends Eloquent {
 ```
 
 Теперь создаём миграцию
-
 ```bash
 xu@calypso:~/ach$ php artisan migrate:make create_achievments_table
 ```  
 
-создался файл `ach/app/database/migrations/YYYY_MM_DD_SSZZZZ_create_achievments_table.php`, описываем в нём миграцию
-
+создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_achievments_table.php`, описываем в нём миграцию
 ```php
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -205,14 +205,18 @@ class CreateAchievmentsTable extends Migration {
 }
 ```
 
+Применяем миграцию
+```bash
+xu@calypso:~/ach$ php artisan migrate
+```  
+
 #### Создаём связь многие ко многим для таблиц `users` и `achievments`
 
 ```bash
 xu@calypso:~/ach$ php artisan migrate:make create_user_achievments_table
 ```  
 
-создался файл `ach/app/database/migrations/YYYY_MM_DD_SSZZZZ_create_user_achievments_table.php`, описываем в нём миграцию
-
+создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_user_achievments_table.php`, описываем в нём миграцию
 ```php
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -240,9 +244,14 @@ class CreateUserAchievmentsTable extends Migration {
         });
 	}
 }
+```
+
+Применяем миграцию
+```bash
+xu@calypso:~/ach$ php artisan migrate
+```  
 
 Добавляем в модель `Achievment` метод `->users()`
-
 ```php
 // User >-< Achievment many to many relationship
 public function users()
@@ -252,7 +261,6 @@ public function users()
 ```
 
 А в модель `User` метод `->achievments()`
-
 ```php
 // User >-< Achievment many to many relationship
 public function achievments()
@@ -268,6 +276,7 @@ $achievments = $user->achievments; // все достижения данного
 $achievment = $achievments[0];
 $isApproved = $achievment->pivot->is_approved; // получаем данные из таблицы связи
 ```
+
 или 
 ```php
 $achievement = Achievment::find($id);
@@ -276,3 +285,133 @@ $users = $achievments->users; // все пользователи с данным
 Подробнее http://laravel.com/docs/eloquent#relationships
 
 Текущая структура БД: docs/db/01.users_and_achievments.png
+
+### Commit 8ecf5cc users and achievments: models, migrations and relationship
+
+#### Создаём миграции, модели и связи для сущности `Group`
+
+```bash
+xu@calypso:~/ach$ php artisan migrate:make create_groups_table
+```  
+
+создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_groups_table.php`, описываем в нём миграцию
+```php
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class CreateGroupsTable extends Migration {
+
+	public function up()
+	{
+        Schema::create('groups', function(Blueprint $table)
+        {
+            $table->increments('id');
+            $table->string('title');
+            $table->string('description');
+            $table->string('code');
+            $table->string('image')->nullable();
+            $table->timestamps();
+        });
+	}
+
+	public function down()
+	{
+        Schema::table('groups', function(Blueprint $table)
+        {
+            $table->drop();
+        });
+	}
+}
+```
+
+создаём модель `app/models/Group.php`
+```php
+class Group extends Eloquent {
+}
+```
+
+Создаём связь многие ко многим между сущностями Group и User
+
+```bash
+xu@calypso:~/ach$ php artisan migrate:make create_user_groups_table
+```  
+
+создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_user_groups_table.php`, описываем в нём миграцию
+
+```php
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class CreateUserGroupsTable extends Migration {
+
+	public function up()
+	{
+        Schema::create('user_groups', function(Blueprint $table)
+        {
+            $table->integer('id_user')->unsigned();
+            $table->integer('id_group')->unsigned();
+
+            $table->foreign('id_user')->references('id')->on('users');
+            $table->foreign('id_group')->references('id')->on('groups');
+        });
+	}
+	public function down()
+	{
+        Schema::table('user_groups', function(Blueprint $table)
+        {
+            $table->drop();
+        });
+	}
+}
+```
+
+Применяем миграции
+```bash
+xu@calypso:~/ach$ php artisan migrate
+```  
+
+Добавляем в модель `Group` метод `->users()`
+```php
+// User >-< Achievment many to many relationship
+public function users()
+{
+    return $this->belongsToMany('User', 'user_groups', 'id_group', 'id_user');
+}
+```
+
+А в модель `User` метод `->groups()`
+```php
+// User >-< Group many to many relationship
+public function groups()
+{
+    return $this->belongsToMany('Group', 'user_groups', 'id_user', 'id_group');
+}
+```
+
+Создаём связь многие ко многим между сущностями Group и Achievment
+```bash
+xu@calypso:~/ach$ php artisan migrate:make create_achievment_groups_table
+```  
+
+создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_achievment_groups_table.php`, описываем в нём миграцию
+
+Добавляем в модель `Achievment` метод `->groups()`
+
+```php
+// Achievment >-< Group many to many relationship
+public function groups()
+{
+    return $this->belongsToMany('Group', 'achievment_groups', 'id_achievment', 'id_group');
+}
+```
+
+А в модель `Group` метод `->achievments()`
+```php
+// Group >-< Achievment many to many relationship
+public function achievments()
+{
+    return $this->belongsToMany('Achievment', 'achievment_groups', 'id_group', 'id_achievment');
+}
+```
+
+Текущая структура БД: docs/db/02.groups.png
