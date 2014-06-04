@@ -598,3 +598,83 @@ class AchievmentSeeder extends Seeder
 $this->call('AchievmentSeeder');
 ```
 
+### Commit b9c4bc7 test data
+
+#### Роутинг и контроллеры
+
+На данный момент нужно реализовать следующие пути
+
+ * `/` список достижений
+ * `/users` список пользователей
+ * `/users/{id}` страница пользователя, где id -- идентификатор пользователя
+ * `/achievments` тоже список достижений (?)
+ * `/achievments/{id}` страница достижения
+
+в файле `app/routes.php` удаляем текущий роут для пути `/` и прописываем наши роуты
+
+```php
+Route::get('/', 'AchievmentController@getMain');
+
+Route::get('users', 'AchievmentController@getUsers');
+Route::get('users/{id}', 'AchievmentController@getUser');
+
+Route::get('achievments', 'AchievmentController@getAchievments');
+Route::get('achievments/{id}', 'AchievmentController@getAchievment');
+```
+
+Так как страниц не очень много, то все их заносим в один контроллер `AchievmentController`
+
+Создаём файл `app/controllers/AchievmentController.php` со следующим содержимым
+(если действие контроллера возвращает массив, то приложение возвращает ответ в формате `json` с соответствующим 
+хедером `application/json`, при это eloquent модели тоже корректно преобразовываются, с исключенными `hidden` полями, 
+которые мы установили в соответствующей модели, как,например, поле `password`)
+
+```php
+<?php
+
+class AchievmentController extends BaseController
+{
+
+    public function getMain()
+    {
+        return ['url' => '/'];
+    }
+
+    public function getUsers()
+    {
+        $users = User::all();
+
+        return $users;
+    }
+
+    public function getUser($id)
+    {
+        $user = User::find($id);
+        if ($user === null) {
+            App::abort(404, 'Page not found');
+        }
+
+        return $user;
+    }
+
+    public function getAchievments()
+    {
+        $achievments = Achievment::all();
+
+        return $achievments;
+    }
+
+    public function getAchievment($id)
+    {
+        $achievment = Achievment::find($id);
+        if ($achievment === null) {
+            App::abort(404, 'Page not found');
+        }
+
+        return $achievment;
+    }
+}
+```
+Теперь можно открыть соответствующие страницы в браузере и убедиться, что всё работает.
+
+

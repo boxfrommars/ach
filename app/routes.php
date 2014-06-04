@@ -11,7 +11,10 @@
 |
 */
 
-Route::get('/', function()
-{
-	return View::make('hello');
-});
+Route::get('/', 'AchievmentController@getMain');
+
+Route::get('users', 'AchievmentController@getUsers');
+Route::get('users/{id}', 'AchievmentController@getUser');
+
+Route::get('achievments', 'AchievmentController@getAchievments');
+Route::get('achievments/{id}', 'AchievmentController@getAchievment');
