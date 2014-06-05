@@ -677,4 +677,9 @@ class AchievmentController extends BaseController
 ```
 Теперь можно открыть соответствующие страницы в браузере и убедиться, что всё работает.
 
+### Commit 4ef320b routing & controllers
+
+#### Добавляем виды
+
+Сначала создадим общий лайаут `app/views/layout.blade.php`
 

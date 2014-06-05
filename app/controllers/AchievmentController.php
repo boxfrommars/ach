@@ -5,7 +5,7 @@ class AchievmentController extends BaseController
 
     public function getMain()
     {
-        return ['url' => '/'];
+        return View::make('layout');
     }
 
     public function getUsers()
