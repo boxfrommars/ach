@@ -18,12 +18,13 @@ body {
     background-color: #f5f5f5;
 }
 
+
 /* Custom page CSS
 -------------------------------------------------- */
 /* Not required for template or sticky footer method. */
 
 body > .container {
-    padding: 60px 15px 0;
+    padding: 80px 15px 0;
 }
 .container .text-muted {
     margin: 20px 0;
@@ -32,4 +33,34 @@ body > .container {
 #footer > .container {
     padding-right: 15px;
     padding-left: 15px;
+}
+
+.label-group[href] {
+    background-color: #999;
+}
+.label-group[href]:hover, .label-group[href]:focus {
+    opacity: .8;
+}
+
+.label-female[href] {
+    background-color: #CC333F;
+}
+.label-male[href] {
+    background-color: #00A0B0;
+}
+.label-designer[href] {
+    background-color: #EB6841;
+}
+.label-manager[href] {
+    background-color: #6A4A3C;
+}
+.label-beard[href] {
+    background-color: #6A4A3C;
+}
+.label-developer[href] {
+    background-color: #EDC951;
+}
+
+.achievment-image-icon {
+    height: 30px;
 }

@@ -7,8 +7,8 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <title>Achievments</title>
-    <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/style.css" />
 </head>
 
 <body>
@@ -23,8 +23,8 @@
         </div>
         <div class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-                <li><a href="#">Достижения</a></li>
-                <li><a href="#">Пользователи</a></li>
+                <li><a href="/achievments">Достижения</a></li>
+                <li><a href="/users">Пользователи</a></li>
             </ul>
         </div><!--/.nav-collapse -->
     </div>

@@ -10,35 +10,35 @@ class AchievmentController extends BaseController
 
     public function getUsers()
     {
-        $users = User::all();
+        $users = User::with('achievments', 'groups')->get();
 
-        return $users;
+        return View::make('user.user_list', array('users' => $users));
     }
 
     public function getUser($id)
     {
-        $user = User::find($id);
+        $user = User::with('achievments', 'groups')->find($id);
         if ($user === null) {
             App::abort(404, 'Page not found');
         }
 
-        return $user;
+        return View::make('user.user_show', array('user' => $user));
     }
 
     public function getAchievments()
     {
-        $achievments = Achievment::all();
+        $achievments = Achievment::with('users', 'groups')->get();
 
-        return $achievments;
+        return View::make('achievment.achievment_list', array('achievments' => $achievments));
     }
 
     public function getAchievment($id)
     {
-        $achievment = Achievment::find($id);
+        $achievment = Achievment::with('users.groups', 'users.achievments', 'groups')->find($id);
         if ($achievment === null) {
             App::abort(404, 'Page not found');
         }
 
-        return $achievment;
+        return View::make('achievment.achievment_show', array('achievment' => $achievment));
     }
 }

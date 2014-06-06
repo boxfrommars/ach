@@ -4,11 +4,13 @@ Based on Laravel
 
 ## Changelog
 
+Для начала создадим с помощью `composer` проект, и отдадим на растерзание серверу папку `app/storage`
+
 ```bash
 xu@calypso:~$ composer create-project laravel/laravel ach --prefer-dist // создаём проект
 xu@calypso:~$ cd ach // переходим в папку проекта
 xu@calypso:~/ach$ composer update
-xu@calypso:~/ach$ chmod a+rw app/storage -R // права на чтение для сервера. можно (и для продакшна -- нужно) просто разрешить для группы вебсервера
+xu@calypso:~/ach$ chmod a+rw app/storage -R // права на чтение и запись для сервера. можно (и для продакшна -- нужно) просто разрешить для группы вебсервера
 ```
 
 Теперь для запуска сервера достаточно выполнить 
@@ -21,7 +23,12 @@ xu@calypso:~/ach$ php artisan serve // дополнительный параме
 
 #### Настраиваем определение окружения разработчика http://laravel.com/docs/configuration#environment-configuration
 
-Next, we need to instruct the framework how to determine which environment it is running in. The default environment is always production. However, you may setup other environments within the bootstrap/start.php file at the root of your installation. In this file you will find an $app->detectEnvironment call. The array passed to this method is used to determine the current environment. You may add other environments and machine names to the array as needed.
+По умолчанию окружение -- `production`, а для разработки нам понадобится использовать откружение `local`. из коробки единственная разница
+между `local` и `production` только в том, что для локал выставлен параметр конфигурации `debag => true` и вынесен отдельный конфиг для подключения к бд, 
+в котором сконфигурирован доступ к бд по умолчанию в homestead, но мы можем переписать для локального окружения любой параметр, также можно 
+добавлять собственные окружения. Подробнее см. [документацию](http://laravel.com/docs/configuration#environment-configuration)
+
+Для работы в локальном окружении добавить в файле `bootstrap/start.php` в массиве передаваемом в  `->detectEnvironment` имя своего компьютера (в Linux/Mac определяется командой `hostname`)
 
 ```php
 $env = $app->detectEnvironment(array(
@@ -29,21 +36,22 @@ $env = $app->detectEnvironment(array(
 ));
 ```
 
-In this example, 'local' is the name of the environment and 'your-machine-name' is the hostname of your server. On Linux and Mac, you may determine your hostname using the hostname terminal command.
-
 #### Настраиваем автодополнение https://github.com/barryvdh/laravel-ide-helper
+
+Так как в laravel используются 'фасады' ([подробнее](http://laravel.com/docs/facades)), то в вашей ide не будет работать автодополнение, а это означает вечные муки. Благо есть
+ пакет, который решает эту проблему. установим его
 
 ```bash
 xu@calypso:~/ach$ composer require barryvdh/laravel-ide-helper:1.* // добавляем пакет для генерации файлов для автодополнения
 ```
 
-After updating composer, add the `ServiceProvider` to the providers array in `app/config/app.php`
+Теперь добавим в массив провайдеров в файле `app/config/app.php` следующую строчку
 
 ```php
 'Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider'
 ```
 
-You can now re-generate the docs yourself (for future updates) in artisan
+теперь мы можем генерировать файл-хелпер для автодополнения, с помощью команды `artisan`: `php artisan ide-helper:generate`
 
 ```bash
 xu@calypso:~/ach$ php artisan clear-compiled
@@ -57,19 +65,19 @@ xu@calypso:~/ach$ php artisan optimize
 xu@calypso:~/ach$ composer require barryvdh/laravel-debugbar:dev-master
 ```
 
-After updating composer, add the ServiceProvider to the providers array in `app/config/app.php`
+Теперь добавим в массив провайдеров в файле `app/config/app.php` следующую строчку
 
 ```php
 'Barryvdh\Debugbar\ServiceProvider',
 ```
 
-You need to publish the assets from this package.
+Добавим ресурсы этого пакета (стили, js)
 
 ```bash
 xu@calypso:~/ach$ php artisan debugbar:publish
 ```
 
-Note: The public assets can change overtime (because of upstream changes), it is recommended to re-publish them after update. You can also add the republish command in composer.json.
+В [документации](https://github.com/barryvdh/laravel-debugbar) к пакету автор отмечает, что ресурсы могут меняться и советует добавить в ваш `composer.json` в `post-update` следующую строчку: 
 
 ```php
 "post-update-cmd": [
@@ -103,7 +111,7 @@ mysql> FLUSH PRIVILEGES;
 ),
 ```
 
-Теперь можно перегенерировать хелпер для автодополнения
+Теперь можно перегенерировать хелпер для автодополнения, сейчас ошибок не будет, а заодно хелпер сгенерируется с поддержкой автодополнения для фасадов связанных с БД, таких как Schema, Blueprint.
 ```bash
 xu@calypso:~/ach$ php artisan clear-compiled
 xu@calypso:~/ach$ php artisan ide-helper:generate
@@ -115,6 +123,8 @@ xu@calypso:~/ach$ php artisan optimize
 #### Создаём миграцию для таблицы `users`
 
 Для `users` по умолчанию уже идёт модель `User`, поэтому создавть вручную её не требуется
+
+Создадим миграцию для создания таблицы users
 ```bash
 xu@calypso:~/ach$ php artisan migrate:make create_users_table
 ```  
@@ -126,6 +136,7 @@ use Illuminate\Database\Migrations\Migration;
 
 class CreateUsersTable extends Migration {
 
+    // то что происходит при 'накатывании' миграции, в нашем случае создание таблицы
 	public function up()
 	{
         Schema::create('users', function(Blueprint $table)
@@ -136,11 +147,12 @@ class CreateUsersTable extends Migration {
             $table->string('email')->unique();
             $table->string('password');
             $table->string('remember_token', 100)->nullable();
-            $table->timestamps();
-            $table->softDeletes();
+            $table->timestamps(); // стандартные timestamps: created_at, updated_at
+            $table->softDeletes(); // 'мягкое' удаление, колонка  deleted_at
         });
 	}
 	
+    // то что происходит при 'откате' миграции, в нашем случае удаление таблицы
 	public function down()
 	{
         Schema::table('users', function(Blueprint $table)
@@ -150,6 +162,12 @@ class CreateUsersTable extends Migration {
 	}
 }
 ```
+отметим использование 'мягкого' удаления, 
+при удалении с помощью `$user->delete()` сама запись из таблицы не удаляется, а лишь помечается, как удалённая, при этом в исключается 
+из результатов запросов вида `User:all()` и тому подобных. подробнее см. http://laravel.com/docs/eloquent#soft-deleting
+
+вообще говоря миграции нужны не только для создания таблиц, но и для любых других действий с ними: например, для добавления/удаления колонок, 
+изменения колонок и даже для добавления изменения данных. Подробнее см. http://laravel.com/docs/migrations и https://laracasts.com/index/migration
 
 Применяем миграцию
 ```bash
@@ -158,14 +176,15 @@ xu@calypso:~/ach$ php artisan migrate
 
 #### Создаём модель и миграцию для таблицы `achievments`
 
-Создадим модель: файл `app/models/Achievment.php` со следующим содержимым
+Тут придётся создать модель вручную, то есть создать файл `app/models/Achievment.php` со следующим содержимым
 ```php
 class Achievment extends Eloquent {
-	protected $table = 'achievments'; // в данном случае не обязательно точно указывать таблицу, так как её имя -- множественное число от имени класса модели
+	protected $table = 'achievments'; // в данном случае не обязательно указывать таблицу, так как её имя -- множественное число от имени класса модели и магия laravel всё сделала бы за вас
 }
 ```
 
-Теперь создаём миграцию
+
+Теперь создаём миграцию точно так же как и для `users`
 ```bash
 xu@calypso:~/ach$ php artisan migrate:make create_achievments_table
 ```  
@@ -211,6 +230,9 @@ xu@calypso:~/ach$ php artisan migrate
 ```  
 
 #### Создаём связь многие ко многим для таблиц `users` и `achievments`
+
+для этого нам опять необходимо создать миграцию, которая создат нам таблицу для связей между нашими сущностями, заметим, что мы добавляем данные
+в таблицу связи -- колонку `is_approved`, которая показывает, было ли одобрено достижение администратором, о работе с этими данными будет рассказано несколько ниже
 
 ```bash
 xu@calypso:~/ach$ php artisan migrate:make create_user_achievments_table
@@ -416,6 +438,18 @@ public function achievments()
 
 Текущая структура БД: docs/db/02.groups.png
 
+Теперь мы можем перегенерировать хелпер-файл для поддержки автодополнения в созданных моделей, для этого используется команда `php artisan ide-helper:models`
+
+```bash
+xu@calypso:~/ach$ php artisan clear-compiled
+xu@calypso:~/ach$ php artisan ide-helper:generate
+xu@calypso:~/ach$ php artisan optimize
+```
+
+генератор спросит, добавлять ли докблок с методами и свойствами в каждый файл модели или описать модели в стандартном файле `_ide_helper.php`,
+я предпочитаю добавлять в модели.
+
+
 #### Записываем тестовые данные
 
 Добавляем папку `publig/img/user` для хранения аватарок пользователей
@@ -428,40 +462,33 @@ public function achievments()
 !.gitignore
 ```
 
-Добавляем пакет для генерации тестовых данных
+Добавляем очень удобный пакет для генерации тестовых данных ([документация](https://github.com/fzaninotto/Faker))
 ```bash
 xu@calypso:~/ach$ composer require fzaninotto/faker:1.4.*@dev
 ```
 
 Создаём файл `app/database/seeds/AchievmentSeeder.php`
 ```php
+<?php
+
 class AchievmentSeeder extends Seeder
 {
     /** @var \Faker\Generator */
     protected $_faker;
 
-    public function __construct(){
+    public function __construct()
+    {
         $this->_faker = Faker\Factory::create('ru_RU');
     }
 
     public function run()
     {
-        // Удаляем предыдущие данные
-        DB::table('user_groups')->delete();
-        DB::table('achievment_groups')->delete();
-        DB::table('user_achievments')->delete();
-        DB::table('groups')->delete();
-        DB::table('achievments')->delete();
+        $usersCount = 16;
+        $achievmentsCount = 10;
+        $beardFrequency = 4; // на сколько мальчишек один бородач
+        $defaultPassword = '123123';
 
-        $userImageDirectory = 'public/img/user/';
-        $achievmentImageDirectory = 'public/img/achievment/';
-
-        $this->_cleanImageDirectory($userImageDirectory);
-        $this->_cleanImageDirectory($achievmentImageDirectory);
-
-        /** @var Group[] $groups */
-        $groups = array();
-
+        // а вот и все группы
         $groupsData = array(
             array('title' => 'мальчишки', 'code' => 'male'),
             array('title' => 'девчонки', 'code' => 'female'),
@@ -470,6 +497,23 @@ class AchievmentSeeder extends Seeder
             array('title' => 'менеджеры', 'code' => 'manager'),
             array('title' => 'бородачи', 'code' => 'beard'),
         );
+
+        $userImageDirectory = 'public/img/user/';
+        $achievmentImageDirectory = 'public/img/achievment/';
+
+        // Удаляем предыдущие данные
+        DB::table('user_groups')->delete();
+        DB::table('achievment_groups')->delete();
+        DB::table('user_achievments')->delete();
+        DB::table('groups')->delete();
+        DB::table('achievments')->delete();
+        DB::table('users')->delete();
+
+        $this->_cleanImageDirectory($userImageDirectory);
+        $this->_cleanImageDirectory($achievmentImageDirectory);
+
+        /** @var Group[] $groups */
+        $groups = array();
 
         foreach ($groupsData as $group) {
             $groups[$group['code']] = Group::create(array(
@@ -482,7 +526,7 @@ class AchievmentSeeder extends Seeder
         /** @var Achievment[] $achievments */
         $achievments = array();
 
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < $achievmentsCount; $i++) {
             $achievment = Achievment::create(array(
                 'depth' => $this->_faker->numberBetween(0, 100),
                 'outlook' => $this->_faker->numberBetween(0, 100),
@@ -492,53 +536,71 @@ class AchievmentSeeder extends Seeder
                 'description' => $this->_faker->paragraph(),
                 'image' => $this->_faker->image($achievmentImageDirectory, 100, 100, 'abstract', false),
             ));
-            $this->_attachRandomGroups($achievment, $groups);
+
+            $achievment->groups()->sync($this->_getRandomIds($groups));
             $achievments[] = $achievment;
         }
 
         // Добавляем администратора
-
         /** @var User $user */
-        $user = User::create(array(
+        $userData = array(
             'name' => 'Dmitry Groza',
             'email' => 'boxfrommars@gmail.com',
-            'password' => Hash::make('123123'),
+            'password' => Hash::make($defaultPassword),
             'image' => $this->_faker->image($userImageDirectory, 100, 100, 'people', false),
-        ));
-
-        $user->groups()->attach($groups['developer']->id);
-        $user->groups()->attach($groups['male']->id);
-
-        $achievmentIds = $this->_getRandomAchievmentIds($achievments);
-
-        // чтобы добавить в таблицу связи данные (is_approved) нужно устроить такую конструкцию (idAch => array('is_approved' => true))
-        $user->achievments()->sync(
-            array_combine($achievmentIds, array_fill(0, count($achievmentIds), array('is_approved' => true)))
         );
+        $userGroupIds = array($groups['developer']->id, $groups['male']->id);
+        $userAchievmentIds = $this->_getRandomIds($achievments, 4);
+
+        $this->_createUser($userData, $userGroupIds, $userAchievmentIds);
 
         // Добавляем остальных тестовых пользователей
-        for ($i = 0; $i < 16; $i++) {
+        for ($i = 0; $i < $usersCount; $i++) {
+
+            $gender = $this->_faker->randomElement(array('male', 'female'));
+
             /** @var User $user */
-            $user = User::create(array(
-                'name' => $this->_faker->name,
+            $userData = array(
+                'name' => mb_convert_case($this->_faker->name($gender), MB_CASE_TITLE), // у фейкера нехорошие имена/фамилии, то с большой буквы, то с маленькой. приводим к нормальному виду
                 'email' => $this->_faker->email,
-                'password' => Hash::make('123123'),
+                'password' => Hash::make($defaultPassword),
                 'image' => $this->_faker->image($userImageDirectory, 100, 100, 'people', false),
-            ));
-
-            $achievmentIds = $this->_getRandomAchievmentIds($achievments);
-
-            // чтобы добавить в таблицу связи данные (is_approved) нужно устроить такую конструкцию (idAch => array('is_approved' => true))
-            $user->achievments()->sync(
-                array_combine($achievmentIds, array_fill(0, count($achievmentIds), array('is_approved' => true)))
             );
 
-            $this->_attachRandomGroups($user, $groups);
+            $position = $this->_faker->randomElement(array('developer', 'manager', 'designer'));
+            $userGroupIds = array($groups[$gender]->id, $groups[$position]->id);
+            $userAchievmentIds = $this->_getRandomIds($achievments, 4);
+
+            // добавляем немного бородачей
+            if ($gender === 'male' && rand(1, $beardFrequency) === 1) {
+                array_push($userGroupIds, $groups['beard']->id);
+            }
+
+            $this->_createUser($userData, $userGroupIds, $userAchievmentIds);
         }
     }
 
     /**
-     * @param string $directory
+     * @param array $data данные, которые прямиком отправляются в User::create($data)
+     * @param array $groupIds массив id групп
+     * @param array $achievmentIds массив id достижений
+     */
+    protected function _createUser($data, $groupIds, $achievmentIds)
+    {
+        $user = User::create($data);
+        $user->groups()->sync($groupIds);
+
+        if (!empty($achievmentIds)) { // тут, в отличии от groups нужна проверка, т.к. array_fill вторым параметром  принимает только integer > 0
+            $user->achievments()->sync(
+                array_combine($achievmentIds, array_fill(0, count($achievmentIds), array('is_approved' => true)))
+            );
+        }
+    }
+
+    /**
+     * @param string $directory директория для очищения
+     *
+     * очищаем директорию, при этом не удалянм в ней файл .gitignore
      */
     protected function _cleanImageDirectory($directory)
     {
@@ -553,42 +615,22 @@ class AchievmentSeeder extends Seeder
     }
 
     /**
-     * @param Achievment[] $achievments
-     * @return array
+     * @param Eloquent[] $entities массив объектов со свойством id
+     * @param integer    $maxCount максимальное число возвращаемых id
+     * @return array массив id случайно выбранных объектов из списка
      */
-    protected function _getRandomAchievmentIds($achievments) {
+    protected function _getRandomIds($entities, $maxCount = null)
+    {
+        if ($maxCount === null) {
+            $maxCount = count($entities);
+        }
+
         return array_map(
             function ($item) {
                 return $item->id;
             },
-            $this->_faker->randomElements($achievments, rand(2, 6))
+            $this->_faker->randomElements($entities, rand(1, $maxCount))
         );
-    }
-
-    /**
-     * @param User|Achievment|\Illuminate\Database\Eloquent\Model $entity
-     * @param Group[] $groups
-     */
-    protected function _attachRandomGroups($entity, $groups){
-        $index = $this->_faker->randomNumber();
-
-        $entity->groups()->attach(($index % 2 === 0) ? $groups['male']->id : $groups['female']->id);
-
-        switch ($index % 3) {
-            case 0:
-                $entity->groups()->attach($groups['developer']->id);
-                break;
-            case 1:
-                $entity->groups()->attach($groups['manager']->id);
-                break;
-            case 2:
-                $entity->groups()->attach($groups['designer']->id);
-                break;
-        }
-
-        if ($index % 6 === 0) {
-            $entity->groups()->attach($groups['beard']->id);
-        }
     }
 }
 ```
@@ -681,5 +723,121 @@ class AchievmentController extends BaseController
 
 #### Добавляем виды
 
-Сначала создадим общий лайаут `app/views/layout.blade.php`
+Сначала создадим общий лайаут `app/views/layout.blade.php`, в котором в месте, где будет выводиться контент вставляем `@yield('content')` (см. [документацию к шаблонизотру blade](http://laravel.com/docs/templates#blade-templating)). Заодно удалим ненужные нам `app/views/hello.php` и `app/views/email`. 
+
+```php
+...
+<!-- Begin page content -->
+<div class="container">
+    @yield('content')
+</div>
+...
+```
+
+Теперь создадим отдельные страницы (и соответствующие папки) для каждого действия
+
+`app/views/user/user_list.blade.php`
+
+```php
+@extends('layout')
+
+@section('content')
+    <h1>Пользователи</h1>
+    @foreach ($users as $user)
+    <div class="media">
+        <div class="pull-left">
+            <img class="img-thumbnail" src="/img/user/{{{ $user->image }}}" />
+        </div>
+        <div class="media-body">
+            <h4 class="media-heading"><a href="/users/{{{ $user->id }}}">{{{ $user->name }}}</a></h4>
+            <ul class="list-inline">
+                @foreach ($user->achievments as $achievment)
+                <li><a href="/achievments/{{{ $achievment->id }}}" title="{{{ $achievment->title }}}"><img class="img-thumbnail achievment-image-icon" src="/img/achievment/{{{ $achievment->image }}}" /></a></li>
+                @endforeach
+            </ul>
+
+            <ul class="list-inline">
+                @foreach ($user->groups as $group)
+                <li><a class="label label-group label-{{{ $group->code }}}" href="/groups/{{{ $group->id }}}">{{{ $group->title }}}</a></li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+    @endforeach
+@stop
+```
+
+По аналогии создадим виды `app/views/user/user_show.blade.php`, `app/views/achievment/achievment_show.blade.php`, `app/views/achievment/achievment_list.blade.php` 
+
+Изменим контроллер `app/controllers/AchievmentController.php`, чтобы он начал работать с созданными видами:
+
+```php
+<?php
+
+class AchievmentController extends BaseController
+{
+
+    public function getMain()
+    {
+        return View::make('layout');
+    }
+
+    public function getUsers()
+    {
+        $users = User::all();
+
+        return View::make('user.user_list', array('users' => $users));
+    }
+
+    public function getUser($id)
+    {
+        $user = User::find($id);
+        if ($user === null) {
+            App::abort(404, 'Page not found');
+        }
+
+        return View::make('user.user_show', array('user' => $user));
+    }
+
+    public function getAchievments()
+    {
+        $achievments = Achievment::all();
+
+        return View::make('achievment.achievment_list', array('achievments' => $achievments));
+    }
+
+    public function getAchievment($id)
+    {
+        $achievment = Achievment::find($id);
+        if ($achievment === null) {
+            App::abort(404, 'Page not found');
+        }
+
+        return View::make('achievment.achievment_show', array('achievment' => $achievment));
+    }
+}
+```
+
+Теперь настало время заглянуть в наш debugbar.
+
+А там мы увидим, что страница `/users` делает 35 (жуть) запросов (при 16 пользователях) к базе данных. 
+Дело в том, что каждый раз, когда мы обращаемся к связанным сущностям eloquent-модели, выполняется запрос к базе, получающий эти связанные сущности.
+Но это легко исправить, достаточно заменить:
+* `User::all()` на `User::with('achievments', 'groups')->get()`
+* `Achievment::all()` на `Achievment::with('users', 'groups')->get()`
+* `Achievment::find($id)` на `Achievment::with('users', 'groups')->find($id)` (при запросе одной моделей, нет плюсов в использовании with -- и так и так выполняются три запроса, но это понадобится нам чуть ниже)
+* `User::find($id)` на `User::with('achievments', 'groups')->find($id)`
+
+и мы получим всего три запроса (для users: выборка всех пользователей, выборка всех групп этих пользователей и выборка всех достижений этих пользователей)
+
+Теперь открываем страницу `/achievments/{id}` и видим, что даже после замены выполняются десятки запросов. Это понятно, мы подгрузили только 
+связанных пользователей, но не их связанные группы и достижения, поэтому для каждого пользователя в списке, будет выполняться ещё по два запроса. 
+И кажется, что вот тут-то всё кончено и придётся писать что-то громоздкое собственными руками. Но это не так :) В laravel и для этого есть немного магии, 
+а именно вот такая конструкция:
+
+```php
+Achievment::with('users.groups', 'user.achievments', 'groups')->find($id)
+```
+
+Итого пять запросов независимо от количества пользователей, привязанных к данному достижению.
 

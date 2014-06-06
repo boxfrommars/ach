@@ -5,28 +5,19 @@ class AchievmentSeeder extends Seeder
     /** @var \Faker\Generator */
     protected $_faker;
 
-    public function __construct(){
+    public function __construct()
+    {
         $this->_faker = Faker\Factory::create('ru_RU');
     }
 
     public function run()
     {
-        // Удаляем предыдущие данные
-        DB::table('user_groups')->delete();
-        DB::table('achievment_groups')->delete();
-        DB::table('user_achievments')->delete();
-        DB::table('groups')->delete();
-        DB::table('achievments')->delete();
+        $usersCount = 16;
+        $achievmentsCount = 10;
+        $beardFrequency = 4; // на сколько мальчишек один бородач
+        $defaultPassword = '123123';
 
-        $userImageDirectory = 'public/img/user/';
-        $achievmentImageDirectory = 'public/img/achievment/';
-
-        $this->_cleanImageDirectory($userImageDirectory);
-        $this->_cleanImageDirectory($achievmentImageDirectory);
-
-        /** @var Group[] $groups */
-        $groups = array();
-
+        // а вот и все группы
         $groupsData = array(
             array('title' => 'мальчишки', 'code' => 'male'),
             array('title' => 'девчонки', 'code' => 'female'),
@@ -35,6 +26,23 @@ class AchievmentSeeder extends Seeder
             array('title' => 'менеджеры', 'code' => 'manager'),
             array('title' => 'бородачи', 'code' => 'beard'),
         );
+
+        $userImageDirectory = 'public/img/user/';
+        $achievmentImageDirectory = 'public/img/achievment/';
+
+        // Удаляем предыдущие данные
+        DB::table('user_groups')->delete();
+        DB::table('achievment_groups')->delete();
+        DB::table('user_achievments')->delete();
+        DB::table('groups')->delete();
+        DB::table('achievments')->delete();
+        DB::table('users')->delete();
+
+        $this->_cleanImageDirectory($userImageDirectory);
+        $this->_cleanImageDirectory($achievmentImageDirectory);
+
+        /** @var Group[] $groups */
+        $groups = array();
 
         foreach ($groupsData as $group) {
             $groups[$group['code']] = Group::create(array(
@@ -47,7 +55,7 @@ class AchievmentSeeder extends Seeder
         /** @var Achievment[] $achievments */
         $achievments = array();
 
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < $achievmentsCount; $i++) {
             $achievment = Achievment::create(array(
                 'depth' => $this->_faker->numberBetween(0, 100),
                 'outlook' => $this->_faker->numberBetween(0, 100),
@@ -57,53 +65,71 @@ class AchievmentSeeder extends Seeder
                 'description' => $this->_faker->paragraph(),
                 'image' => $this->_faker->image($achievmentImageDirectory, 100, 100, 'abstract', false),
             ));
-            $this->_attachRandomGroups($achievment, $groups);
+
+            $achievment->groups()->sync($this->_getRandomIds($groups));
             $achievments[] = $achievment;
         }
 
         // Добавляем администратора
-
         /** @var User $user */
-        $user = User::create(array(
+        $userData = array(
             'name' => 'Dmitry Groza',
             'email' => 'boxfrommars@gmail.com',
-            'password' => Hash::make('123123'),
+            'password' => Hash::make($defaultPassword),
             'image' => $this->_faker->image($userImageDirectory, 100, 100, 'people', false),
-        ));
-
-        $user->groups()->attach($groups['developer']->id);
-        $user->groups()->attach($groups['male']->id);
-
-        $achievmentIds = $this->_getRandomAchievmentIds($achievments);
-
-        // чтобы добавить в таблицу связи данные (is_approved) нужно устроить такую конструкцию (idAch => array('is_approved' => true))
-        $user->achievments()->sync(
-            array_combine($achievmentIds, array_fill(0, count($achievmentIds), array('is_approved' => true)))
         );
+        $userGroupIds = array($groups['developer']->id, $groups['male']->id);
+        $userAchievmentIds = $this->_getRandomIds($achievments, 4);
+
+        $this->_createUser($userData, $userGroupIds, $userAchievmentIds);
 
         // Добавляем остальных тестовых пользователей
-        for ($i = 0; $i < 16; $i++) {
+        for ($i = 0; $i < $usersCount; $i++) {
+
+            $gender = $this->_faker->randomElement(array('male', 'female'));
+
             /** @var User $user */
-            $user = User::create(array(
-                'name' => $this->_faker->name,
+            $userData = array(
+                'name' => mb_convert_case($this->_faker->name($gender), MB_CASE_TITLE), // у фейкера нехорошие имена/фамилии, то с большой буквы, то с маленькой. приводим к нормальному виду
                 'email' => $this->_faker->email,
-                'password' => Hash::make('123123'),
+                'password' => Hash::make($defaultPassword),
                 'image' => $this->_faker->image($userImageDirectory, 100, 100, 'people', false),
-            ));
-
-            $achievmentIds = $this->_getRandomAchievmentIds($achievments);
-
-            // чтобы добавить в таблицу связи данные (is_approved) нужно устроить такую конструкцию (idAch => array('is_approved' => true))
-            $user->achievments()->sync(
-                array_combine($achievmentIds, array_fill(0, count($achievmentIds), array('is_approved' => true)))
             );
 
-            $this->_attachRandomGroups($user, $groups);
+            $position = $this->_faker->randomElement(array('developer', 'manager', 'designer'));
+            $userGroupIds = array($groups[$gender]->id, $groups[$position]->id);
+            $userAchievmentIds = $this->_getRandomIds($achievments, 4);
+
+            // добавляем немного бородачей
+            if ($gender === 'male' && rand(1, $beardFrequency) === 1) {
+                array_push($userGroupIds, $groups['beard']->id);
+            }
+
+            $this->_createUser($userData, $userGroupIds, $userAchievmentIds);
         }
     }
 
     /**
-     * @param string $directory
+     * @param array $data данные, которые прямиком отправляются в User::create($data)
+     * @param array $groupIds массив id групп
+     * @param array $achievmentIds массив id достижений
+     */
+    protected function _createUser($data, $groupIds, $achievmentIds)
+    {
+        $user = User::create($data);
+        $user->groups()->sync($groupIds);
+
+        if (!empty($achievmentIds)) { // тут, в отличии от groups нужна проверка, т.к. array_fill вторым параметром  принимает только integer > 0
+            $user->achievments()->sync(
+                array_combine($achievmentIds, array_fill(0, count($achievmentIds), array('is_approved' => true)))
+            );
+        }
+    }
+
+    /**
+     * @param string $directory директория для очищения
+     *
+     * очищаем директорию, при этом не удалянм в ней файл .gitignore
      */
     protected function _cleanImageDirectory($directory)
     {
@@ -118,41 +144,21 @@ class AchievmentSeeder extends Seeder
     }
 
     /**
-     * @param Achievment[] $achievments
-     * @return array
+     * @param Eloquent[] $entities массив объектов со свойством id
+     * @param integer    $maxCount максимальное число возвращаемых id
+     * @return array массив id случайно выбранных объектов из списка
      */
-    protected function _getRandomAchievmentIds($achievments) {
+    protected function _getRandomIds($entities, $maxCount = null)
+    {
+        if ($maxCount === null) {
+            $maxCount = count($entities);
+        }
+
         return array_map(
             function ($item) {
                 return $item->id;
             },
-            $this->_faker->randomElements($achievments, rand(2, 6))
+            $this->_faker->randomElements($entities, rand(1, $maxCount))
         );
-    }
-
-    /**
-     * @param User|Achievment|\Illuminate\Database\Eloquent\Model $entity
-     * @param Group[] $groups
-     */
-    protected function _attachRandomGroups($entity, $groups){
-        $index = $this->_faker->randomNumber();
-
-        $entity->groups()->attach(($index % 2 === 0) ? $groups['male']->id : $groups['female']->id);
-
-        switch ($index % 3) {
-            case 0:
-                $entity->groups()->attach($groups['developer']->id);
-                break;
-            case 1:
-                $entity->groups()->attach($groups['manager']->id);
-                break;
-            case 2:
-                $entity->groups()->attach($groups['designer']->id);
-                break;
-        }
-
-        if ($index % 6 === 0) {
-            $entity->groups()->attach($groups['beard']->id);
-        }
     }
 }
