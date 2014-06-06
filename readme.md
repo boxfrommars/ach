@@ -322,7 +322,7 @@ $users = $achievments->users; // все пользователи с данным
 ```
 Подробнее http://laravel.com/docs/eloquent#relationships
 
-Текущая структура БД: docs/db/01.users_and_achievments.png
+Текущая структура БД: https://github.com/boxfrommars/ach/raw/master/docs/db/01.users_and_achievments.png
 
 ### Commit 8ecf5cc users and achievments: models, migrations and relationship
 
@@ -452,7 +452,7 @@ public function achievments()
 }
 ```
 
-Текущая структура БД: docs/db/02.groups.png
+Текущая структура БД: https://github.com/boxfrommars/ach/raw/master/docs/db/02.groups.png
 
 Теперь мы можем перегенерировать хелпер-файл для поддержки автодополнения в созданных моделей, для этого используется команда `php artisan ide-helper:models`
 
