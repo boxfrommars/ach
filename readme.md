@@ -1,8 +1,24 @@
 ## Achievments
 
-Based on Laravel
+### Установка готового приложения
 
-## Changelog
+    xu@calypso:~$ git clone https://github.com/boxfrommars/achievments-laravel.git
+    xu@calypso:~$ cd achievments-laravel/
+    xu@calypso:~$ composer update
+    xu@calypso:~$ chmod a+rw app/storage -R // папка для хранения логов, кеша и всего такого
+
+    // создаём бд (если изменили здесь параметры бд, то меняем их в кофигурации в файле app/config/database.php)
+    mysql> CREATE USER 'ach'@'localhost' IDENTIFIED BY 'ach';
+    mysql> CREATE DATABASE ach;
+    mysql> GRANT ALL PRIVILEGES ON ach . * TO 'ach'@'localhost';
+    mysql> FLUSH PRIVILEGES;
+
+    xu@calypso:~$ php artisan migrate
+    xu@calypso:~$ php artisan db:seed // тестовые данные, чтобы обновить миграции и данные: php artisan migrate:refresh --seed
+
+    xu@calypso:~$ php artisan serve --port 8444 // запускаем сервер
+
+## Разработка приложения
 
 Для начала создадим с помощью `composer` проект, и отдадим на растерзание серверу папку `app/storage`
 
