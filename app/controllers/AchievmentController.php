@@ -41,4 +41,14 @@ class AchievmentController extends BaseController
 
         return View::make('achievment.achievment_show', array('achievment' => $achievment));
     }
+
+    public function getMy()
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        if (is_null($user)) App::abort(404, 'Page not found');
+
+        // воспользуемся тем же видом, что и для страницы пользователя
+        return View::make('user.user_show', array('user' => $user));
+    }
 }

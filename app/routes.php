@@ -18,3 +18,10 @@ Route::get('users/{id}', 'AchievmentController@getUser');
 
 Route::get('achievments', 'AchievmentController@getAchievments');
 Route::get('achievments/{id}', 'AchievmentController@getAchievment');
+
+Route::get('login', 'AuthController@getLogin');
+Route::post('login', 'AuthController@postLogin');
+Route::get('logout', 'AuthController@logout');
+
+Route::get('my', array('before' => 'auth', 'uses' => 'AchievmentController@getMy'));
+

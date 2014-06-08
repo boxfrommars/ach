@@ -26,12 +26,28 @@
                 <li><a href="/achievments">Достижения</a></li>
                 <li><a href="/users">Пользователи</a></li>
             </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                @if (Auth::check())
+                    <li><a href="/my">Мои успехи</a></li>
+                    <li><a href="/logout">Выйти</a></li>
+                @else
+                    <li><a href="/login">Войти</a></li>
+                @endif
+            </ul>
+
         </div><!--/.nav-collapse -->
     </div>
 </div>
 
 <!-- Begin page content -->
 <div class="container">
+    @if (Session::has('errors'))
+        @foreach (Session::get('errors') as $error)
+            <div class="alert alert-danger">{{ $error }} <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button></div>
+        @endforeach
+    @endif
+
     @yield('content')
 </div>
 

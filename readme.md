@@ -562,7 +562,7 @@ class AchievmentSeeder extends Seeder
         $userData = array(
             'name' => 'Dmitry Groza',
             'email' => 'boxfrommars@gmail.com',
-            'password' => Hash::make($defaultPassword),
+            'password' => Hash::make($defaultPassword), // см. http://laravel.com/docs/security#storing-passwords
             'image' => $this->_faker->image($userImageDirectory, 100, 100, 'people', false),
         );
         $userGroupIds = array($groups['developer']->id, $groups['male']->id);
@@ -857,3 +857,174 @@ Achievment::with('users.groups', 'user.achievments', 'groups')->find($id)
 
 Итого пять запросов независимо от количества пользователей, привязанных к данному достижению.
 
+### Commit 48cec17
+
+#### Аутентификация
+
+По умолчанию с laravel уже идёт модель `User` (`app/models/User.php`), которая довольно просто используется для аутентификации с помощью  
+Eloquent драйвера аутентификации. Также мы выше уже создали таблицу `users` со всеми необходимыми полями. Теперь для аутентификации пользователя,
+нам достаточно в контроллере, в котором будет происходить логин, проверить (предварительно, конечно, полчив $email и $password из формы):
+
+```php
+if (Auth::attempt(array('email' => $email, 'password' => $password)))
+{
+    // успех
+} else {
+    // неудача
+}
+```
+мы используем колонку `email` для аутентификации, но вы может использовать и другую колонку, например, `username`
+
+Создадим контроллер, в котором опишем три действия:
+ 
+ ```php
+class AuthController extends BaseController
+{
+    public function getLogin()
+    {
+        return View::make('auth.login');
+    }
+
+    public function postLogin()
+    {
+        // валидатор проверяющий заполнены ли поля формы
+        $validator = Validator::make(Input::all(), array(
+            'email' => 'required',
+            'password' => 'required'
+        ));
+
+        $credentials = array(
+            'email' => Input::get('email'),
+            'password' => Input::get('password'),
+        );
+
+        // если Auth::attempt вторым параметром принимает true, то приложение запоминает пользователя на неопределённое время
+        // подробнее см. http://laravel.com/docs/security#authenticating-users
+        $isRemember = Input::get('is_remember');
+
+        if ($validator->passes() && Auth::attempt($credentials, $isRemember)) {
+            // в случае успешной аутентификации редиректим на главную
+            return Redirect::intended($path);
+        } else {
+            // в случае неуспешной -- редиректим назад на форму, заполняя поля введёнными данными, также записываем в flash-сообщение ошибки
+            return Redirect::back()
+                ->withInput()
+                ->with('errors', array('Неправильный логин или пароль'));
+        }
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+
+        return Redirect::to('/');
+    }
+}
+ ```
+`Input::all()`, `Input::get($fieldName)` введённые пользователем данные, см. http://laravel.com/docs/requests#basic-input
+`Validator::make` -- валидатор для данных, см. http://laravel.com/docs/validation#basic-usage
+`Redirect::back()`, `Redirect::to($path)`, `Redirect::intended($path)` -- редиректы, см. http://laravel.com/docs/responses#redirects, 
+о `Redirect::intended($path)`будет написано чуть ниже 
+
+Теперь создадим вид для страницы логина `auth/login.blade.php` (точно так же, как и раньше наследуемся от общего лайаута и переписываем
+секцию content), подробнее о работе с формами см. http://laravel.com/docs/html 
+
+```php
+@extends("layout")
+
+@section("content")
+
+<h3>Вход</h3>
+
+{{ Form::open(array('role' => 'form', 'class' => 'form-horizontal')) }}
+<div class="form-group">
+    {{ Form::label("email", "Email", array('class' => 'col-sm-2 control-label')) }}
+    <div class="col-sm-4">
+        {{ Form::text("email", Input::old("email"), array('class' => 'form-control')) }}
+    </div>
+</div>
+<div class="form-group">
+    {{ Form::label("password", "Пароль", array('class' => 'col-sm-2 control-label')) }}
+    <div class="col-sm-4">
+        {{ Form::password("password", array('class' => 'form-control')) }}
+    </div>
+</div>
+<div class="form-group">
+    <div class="col-sm-offset-2 col-sm-4">
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="is_remember"> Запомнить меня
+            </label>
+        </div>
+    </div>
+</div>
+<div class="form-group">
+    <div class="col-sm-offset-2 col-sm-4">
+        {{ Form::submit("Войти", array('class' => 'btn btn-default')) }}
+    </div>
+</div>
+{{ Form::close() }}
+
+@stop
+```
+
+И добавим в `app/routes.php`:
+
+```php
+Route::get('login', 'AuthController@getLogin');
+Route::post('login', 'AuthController@postLogin');
+Route::get('logout', 'AuthController@logout');
+```
+
+Также изменим наш общий лайаут, добавив функциональность для вывода любых ошибок переданных во флеш-сообщениях 
+(см. http://laravel.com/docs/session#flash-data и http://laravel.com/docs/responses#redirects).
+Для этого добавим 
+
+```php
+@if (Session::has('errors'))
+    @foreach (Session::get('errors') as $error)
+        <div class="alert alert-danger">{{ $error }} <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button></div>
+    @endforeach
+@endif
+```
+
+Теперь можно проверять работу формы входа и страницы выхода. 
+Добавим в лайаут ссылки на вход для гостей и на страницу профиля и на выход для вошедших пользователей
+ 
+```php
+<ul class="nav navbar-nav navbar-right">
+    @if (Auth::check())
+        <li><a href="/my">Мои успехи</a></li>
+        <li><a href="/logout">Выйти</a></li>
+    @else
+        <li><a href="/login">Войти</a></li>
+    @endif
+</ul>
+```
+
+`Auth::check()` -- проверяет, прошёл ли человек аутентификацию
+
+Теперь можно устроить страницу `/my` пользователя, воспользовавшись методом `Auth::user()`. Добавим соответствующий метод в `AchievmentController`
+
+```php
+public function getMy()
+{
+    /** @var User $user */
+    $user = Auth::user();
+    if (is_null($user)) App::abort(404, 'Page not found');
+
+    // воспользуемся тем же видом, что и для страницы пользователя
+    return View::make('user.user_show', array('user' => $user));
+}
+```
+
+И добавим новый роут
+
+```php
+Route::get('my', array('before' => 'auth', 'uses' => 'AchievmentController@getMy'));
+```
+
+Тут мы воспользовались встроенным фильтром `auth` (находится в файле `app/filters.php`), который проверяет выполнил ли пользователь вход 
+и, если нет, запишет в сессию, адрес текущей страницы и перенаправит пользователя на страницу входа. После входа пользователя перенаправит обратно на данный адрес.
+ Для этого используется метод `Redirect::intended($path)` (см. `AuthController@postLogin`), который в случае существования в сессии intended страницы, 
+ перенаправит на неё или на $path в другом случае.
