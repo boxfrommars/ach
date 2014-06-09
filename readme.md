@@ -54,8 +54,8 @@ $env = $app->detectEnvironment(array(
 
 #### Настраиваем автодополнение https://github.com/barryvdh/laravel-ide-helper
 
-Так как в laravel используются 'фасады' ([подробнее](http://laravel.com/docs/facades)), то в вашей ide не будет работать автодополнение, а это означает вечные муки. Благо есть
- пакет, который решает эту проблему. установим его
+Так как в laravel используются 'фасады' ([подробнее](http://laravel.com/docs/facades)), то в вашей ide не будет работать автодополнение, 
+а это значит, что вас ждут вечные муки. Благо есть пакет, который решает эту проблему. установим его
 
 ```bash
 xu@calypso:~/ach$ composer require barryvdh/laravel-ide-helper:1.* // добавляем пакет для генерации файлов для автодополнения
@@ -66,6 +66,8 @@ xu@calypso:~/ach$ composer require barryvdh/laravel-ide-helper:1.* // добав
 ```php
 'Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider'
 ```
+> Подробнее о сервис-провайдерах см. http://laravel.com/docs/ioc#service-providers
+
 
 теперь мы можем генерировать файл-хелпер для автодополнения, с помощью команды `artisan`: `php artisan ide-helper:generate`
 
