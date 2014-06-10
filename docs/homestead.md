@@ -148,7 +148,7 @@ sites:
 ```
 и выполнить
 ```bash
-vagrant provisio
+vagrant provision
 ```
 2. Зайти на виртуальную машину и воспользоваться командой serve
 ```php
