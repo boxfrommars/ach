@@ -141,10 +141,10 @@ sites:
 sites:
     - map: test.dev
       to: /home/vagrant/Workspace/test.dev/public
-    - map: new.dev
-      to: /home/vagrant/Workspace/new.dev/public
     - map: ach.dev
       to: /home/vagrant/Workspace/ach.dev/public
+    - map: new.dev
+      to: /home/vagrant/Workspace/new.dev/public
 ```
 и выполнить
 ```bash
