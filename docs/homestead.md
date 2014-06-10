@@ -153,9 +153,9 @@ sites:
     ```
 
 2. Зайти на виртуальную машину и воспользоваться командой serve
-```php
-vagrant ssh
-serve new.dev /home/vagrant/Workspace/new.dev/public
-```
+    ```php
+    vagrant ssh
+    serve new.dev /home/vagrant/Workspace/new.dev/public
+    ```
 
 > После добавления любым из этих способов, не забудьте обновить файл `hosts`: `127.0.0.1 new.dev`
