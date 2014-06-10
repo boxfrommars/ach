@@ -38,7 +38,7 @@ http://www.vagrantup.com/downloads.html
 
     vagrant box add laravel/homestead
 
-Дальше клонируем репозиторий `homestead`. Документация советует клонировать в папку, где хранятся 
+Дальше клонируем репозиторий `homestead`. Документация советует клонировать в папку, где будут хранится 
 все ваши проекты. (например C:/Users/YourName/Workspace) 
 клонируем:
 
