@@ -1,5 +1,17 @@
 ## Achievments
 
+### Requirements
+
+* PHP >= 5.4 + Mcrypt
+* Mysql
+* Conposer
+* Git (для установки готового приложения)
+
+Вы можете настроить Homestead -- виртуальную машину, которая позволит вам на любой системе (Windows, Mac, Linux) развернуть девелоперское окружение, 
+включающее Ubuntu 14.04, Nginx, MySQL, PostgreSQL, Redis, Memcached и многое другое. Причём вам даже не придётся самим настраивать сервер, 
+а добавление новых сайтов происходит добавлением двух строчек в конфигурационном файле. 
+Подробнее см. https://github.com/boxfrommars/ach/blob/master/docs/homestead.md 
+
 ### Установка готового приложения
 
     xu@calypso:~$ git clone https://github.com/boxfrommars/achievments-laravel.git
@@ -20,7 +32,7 @@
 
 ## Разработка приложения
 
-Для начала создадим с помощью `composer` проект, и отдадим на растерзание серверу папку `app/storage`
+Для начала создадим с помощью `composer` проект, и дадим серверу права на запись и чтение папки `app/storage`
 
 ```bash
 xu@calypso:~$ composer create-project laravel/laravel ach --prefer-dist // создаём проект
@@ -29,11 +41,15 @@ xu@calypso:~/ach$ composer update
 xu@calypso:~/ach$ chmod a+rw app/storage -R // права на чтение и запись для сервера. можно (и для продакшна -- нужно) просто разрешить для группы вебсервера
 ```
 
-Теперь для запуска сервера достаточно выполнить 
+Теперь для запуска сервера достаточно выполнить (если вы сами настроили apache или nginx или используете Homestead, запускать сервер не нужно)
     
 ```bash
 xu@calypso:~/ach$ php artisan serve // дополнительный параметр --port для указания конкретного порта 
 ```
+
+> php artisan -- это набор консольных комманд поставляющихся с laravel, облегчающих разработку на laravel, весь список доступных комманд можно посмотерть выполнив
+> `php artisan list` или на [странице документации](http://laravel.com/docs/artisan)
+    
 
 ### commit 4252a94 init
 
