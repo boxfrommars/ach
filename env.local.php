@@ -1,8 +1,6 @@
 <?php
 return array(
-    'mysql' => array(
-        'database' => 'ach',
-        'username' => 'ach',
-        'password' => 'ach',
-    )
+    'mysql.database' => 'ach',
+    'mysql.username' => 'ach',
+    'mysql.password' => 'ach',
 );
