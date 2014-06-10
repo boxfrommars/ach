@@ -138,19 +138,20 @@ sites:
 Для добавления новых сайтов есть два способа:
 
 1. Добавить в `Homestead.yaml` новый сайт 
-```yaml
-sites:
-    - map: test.dev
-      to: /home/vagrant/Workspace/test.dev/public
-    - map: ach.dev
-      to: /home/vagrant/Workspace/ach.dev/public
-    - map: new.dev
-      to: /home/vagrant/Workspace/new.dev/public
-```
+    ```yaml
+    sites:
+        - map: test.dev
+          to: /home/vagrant/Workspace/test.dev/public
+        - map: ach.dev
+          to: /home/vagrant/Workspace/ach.dev/public
+        - map: new.dev
+          to: /home/vagrant/Workspace/new.dev/public
+    ```
 и выполнить
-```bash
-vagrant provision
-```
+    ```bash
+    vagrant provision
+    ```
+
 2. Зайти на виртуальную машину и воспользоваться командой serve
 ```php
 vagrant ssh
