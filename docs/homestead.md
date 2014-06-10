@@ -114,19 +114,42 @@ sites:
 После того, как vagrant инициализирует и запустит виртуальную машину, вы можете проверить её работу, 
 создав файл C:\Users\YourName\Workspace\test.dev\public\index.php с содержимым `<?php phpinfo();` и перейдя на http://test.dev:8000
 
+> Следующие порты перенаправляются к вашей виртуальной машине
+> * SSH: 2222 -> 22
+> * HTTP: 8000 -> 80
+> * MySQL: 33060 -> 3306
+> * Postgres: 54320 -> 5432
+> то есть вы можете подключиться, например, к mysql 
+> с клиентской машины так: `mysql -u homestead -p -P 33060 -h 127.0.0.1`, 
+> логины и пароли для postgresql и mysql -- как vagrant/secret так и root/secret
+> Если вы подключаетесь к бд изнутри вашей виртуальной машины, то используйте стандартные порты
+
+Для добавления новых сайтов есть два способа:
+1. Добавить в Homestead.yaml новый сайт 
+```yaml
+sites:
+    - map: test.dev
+      to: /home/vagrant/Workspace/test.dev/public
+    - map: new.dev
+      to: /home/vagrant/Workspace/new.dev/public
+    - map: ach.dev
+      to: /home/vagrant/Workspace/ach.dev/public
+```
+и выполнить
+```bash
+vagrant provisio
+```
+2. Зайти на виртуальную машину и воспользоваться командой serve
+```php
+vagrant ssh
+serve new.dev /home/vagrant/Workspace/new.dev/public
+```
+
+> После добавления любым из этих способов, не забудьте обновить файл `hosts`: `127.0.0.1 new.dev`
+
 Полезные команды Vagrant, которые можно выполнять на клиентской машине из директории homestead:
 
 ```bash
-    vagrant ssh # зайти на виртуальную машину
-    
-    vagrant 
+    vagrant ssh # зайти на виртуальную машину, замена для ssh
+    vagrant destroy # удалить виртуальную машину
 ```
-
-также вы можете подключиться используя следующие порты:
-
-SSH: 2222 -> Forwards To 22
-HTTP: 8000 -> Forwards To 80
-MySQL: 33060 -> Forwards To 3306
-Postgres: 54320 -> Forwards To 5432
-
-для mysql и postgresql логин / пароль -- homestead / secret
