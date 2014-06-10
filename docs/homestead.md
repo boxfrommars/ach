@@ -151,7 +151,6 @@ sites:
 ```bash
 vagrant provision
 ```
-
 2. Зайти на виртуальную машину и воспользоваться командой serve
 ```php
 vagrant ssh
