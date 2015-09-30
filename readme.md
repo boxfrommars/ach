@@ -1,4 +1,4 @@
-## Achievments
+## Achievements
 
 ### Requirements
 
@@ -14,8 +14,8 @@
 
 ### Установка готового приложения
 
-    xu@calypso:~$ git clone https://github.com/boxfrommars/achievments-laravel.git
-    xu@calypso:~$ cd achievments-laravel/
+    xu@calypso:~$ git clone https://github.com/boxfrommars/achievements-laravel.git
+    xu@calypso:~$ cd achievements-laravel/
     xu@calypso:~$ composer update
     xu@calypso:~$ chmod a+rw app/storage -R # папка для хранения логов, кеша и всего такого
 
@@ -208,31 +208,31 @@ class CreateUsersTable extends Migration {
 xu@calypso:~/ach$ php artisan migrate
 ```  
 
-#### Создаём модель и миграцию для таблицы `achievments`
+#### Создаём модель и миграцию для таблицы `achievements`
 
-Тут придётся создать модель вручную, то есть создать файл `app/models/Achievment.php` со следующим содержимым
+Тут придётся создать модель вручную, то есть создать файл `app/models/Achievement.php` со следующим содержимым
 ```php
-class Achievment extends Eloquent {
-	protected $table = 'achievments'; // в данном случае не обязательно указывать таблицу, так как её имя -- множественное число от имени класса модели и магия laravel всё сделала бы за вас
+class Achievement extends Eloquent {
+	protected $table = 'achievements'; // в данном случае не обязательно указывать таблицу, так как её имя -- множественное число от имени класса модели и магия laravel всё сделала бы за вас
 }
 ```
 
 
 Теперь создаём миграцию точно так же как и для `users`
 ```bash
-xu@calypso:~/ach$ php artisan migrate:make create_achievments_table
+xu@calypso:~/ach$ php artisan migrate:make create_achievements_table
 ```  
 
-создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_achievments_table.php`, описываем в нём миграцию
+создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_achievements_table.php`, описываем в нём миграцию
 ```php
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateAchievmentsTable extends Migration {
+class CreateAchievementsTable extends Migration {
 
 	public function up()
 	{
-        Schema::create('achievments', function(Blueprint $table)
+        Schema::create('achievements', function(Blueprint $table)
         {
             $table->increments('id');
 
@@ -250,7 +250,7 @@ class CreateAchievmentsTable extends Migration {
 
 	public function down()
 	{
-        Schema::table('achievments', function(Blueprint $table)
+        Schema::table('achievements', function(Blueprint $table)
         {
             $table->drop();
         });
@@ -263,38 +263,38 @@ class CreateAchievmentsTable extends Migration {
 xu@calypso:~/ach$ php artisan migrate
 ```  
 
-#### Создаём связь многие ко многим для таблиц `users` и `achievments`
+#### Создаём связь многие ко многим для таблиц `users` и `achievements`
 
 для этого нам опять необходимо создать миграцию, которая создат нам таблицу для связей между нашими сущностями, заметим, что мы добавляем данные
 в таблицу связи -- колонку `is_approved`, которая показывает, было ли одобрено достижение администратором, о работе с этими данными будет рассказано несколько ниже
 
 ```bash
-xu@calypso:~/ach$ php artisan migrate:make create_user_achievments_table
+xu@calypso:~/ach$ php artisan migrate:make create_user_achievements_table
 ```  
 
-создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_user_achievments_table.php`, описываем в нём миграцию
+создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_user_achievements_table.php`, описываем в нём миграцию
 ```php
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateUserAchievmentsTable extends Migration {
+class CreateUserAchievementsTable extends Migration {
 
 	public function up()
 	{
-        Schema::create('user_achievments', function(Blueprint $table)
+        Schema::create('user_achievements', function(Blueprint $table)
         {
             $table->integer('id_user')->unsigned();
-            $table->integer('id_achievment')->unsigned();
+            $table->integer('id_achievement')->unsigned();
             $table->boolean('is_approved')->default(false);
 
             $table->foreign('id_user')->references('id')->on('users');
-            $table->foreign('id_achievment')->references('id')->on('achievments');
+            $table->foreign('id_achievement')->references('id')->on('achievements');
         });
 	}
 
 	public function down()
 	{
-        Schema::table('user_achievments', function(Blueprint $table)
+        Schema::table('user_achievements', function(Blueprint $table)
         {
             $table->drop();
         });
@@ -307,42 +307,42 @@ class CreateUserAchievmentsTable extends Migration {
 xu@calypso:~/ach$ php artisan migrate
 ```  
 
-Добавляем в модель `Achievment` метод `->users()`
+Добавляем в модель `Achievement` метод `->users()`
 ```php
-// User >-< Achievment many to many relationship
+// User >-< Achievement many to many relationship
 public function users()
 {
-    return $this->belongsToMany('User', 'user_achievments', 'id_achievment', 'id_user');
+    return $this->belongsToMany('User', 'user_achievements', 'id_achievement', 'id_user');
 }
 ```
 
-А в модель `User` метод `->achievments()`
+А в модель `User` метод `->achievements()`
 ```php
-// User >-< Achievment many to many relationship
-public function achievments()
+// User >-< Achievement many to many relationship
+public function achievements()
 {
-    return $this->belongsToMany('Achievment', 'user_achievments', 'id_user', 'id_achievment')->withPivot('is_approved');
+    return $this->belongsToMany('Achievement', 'user_achievements', 'id_user', 'id_achievement')->withPivot('is_approved');
 }
 ```
 
 Теперь мы можем получать связанные сущности, например:
 ```php
 $user = User::find($id);
-$achievments = $user->achievments; // все достижения данного пользователя
-$achievment = $achievments[0];
-$isApproved = $achievment->pivot->is_approved; // получаем данные из таблицы связи
+$achievements = $user->achievements; // все достижения данного пользователя
+$achievement = $achievements[0];
+$isApproved = $achievement->pivot->is_approved; // получаем данные из таблицы связи
 ```
 
 или 
 ```php
-$achievement = Achievment::find($id);
-$users = $achievments->users; // все пользователи с данным достижением
+$achievement = Achievement::find($id);
+$users = $achievements->users; // все пользователи с данным достижением
 ```
 Подробнее http://laravel.com/docs/eloquent#relationships
 
-Текущая структура БД: ![users and achievments](https://github.com/boxfrommars/ach/raw/master/docs/db/01.users_and_achievments.png)
+Текущая структура БД: ![users and achievements](https://github.com/boxfrommars/ach/raw/master/docs/db/01.users_and_achievements.png)
 
-### Commit 8ecf5cc users and achievments: models, migrations and relationship
+### Commit 8ecf5cc users and achievements: models, migrations and relationship
 
 #### Создаём миграции, модели и связи для сущности `Group`
 
@@ -428,7 +428,7 @@ xu@calypso:~/ach$ php artisan migrate
 
 Добавляем в модель `Group` метод `->users()`
 ```php
-// User >-< Achievment many to many relationship
+// User >-< Achievement many to many relationship
 public function users()
 {
     return $this->belongsToMany('User', 'user_groups', 'id_group', 'id_user');
@@ -444,29 +444,29 @@ public function groups()
 }
 ```
 
-Создаём связь многие ко многим между сущностями Group и Achievment
+Создаём связь многие ко многим между сущностями Group и Achievement
 ```bash
-xu@calypso:~/ach$ php artisan migrate:make create_achievment_groups_table
+xu@calypso:~/ach$ php artisan migrate:make create_achievement_groups_table
 ```  
 
-создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_achievment_groups_table.php`, описываем в нём миграцию
+создался файл `app/database/migrations/YYYY_MM_DD_SSZZZZ_create_achievement_groups_table.php`, описываем в нём миграцию
 
-Добавляем в модель `Achievment` метод `->groups()`
+Добавляем в модель `Achievement` метод `->groups()`
 
 ```php
-// Achievment >-< Group many to many relationship
+// Achievement >-< Group many to many relationship
 public function groups()
 {
-    return $this->belongsToMany('Group', 'achievment_groups', 'id_achievment', 'id_group');
+    return $this->belongsToMany('Group', 'achievement_groups', 'id_achievement', 'id_group');
 }
 ```
 
-А в модель `Group` метод `->achievments()`
+А в модель `Group` метод `->achievements()`
 ```php
-// Group >-< Achievment many to many relationship
-public function achievments()
+// Group >-< Achievement many to many relationship
+public function achievements()
 {
-    return $this->belongsToMany('Achievment', 'achievment_groups', 'id_group', 'id_achievment');
+    return $this->belongsToMany('Achievement', 'achievement_groups', 'id_group', 'id_achievement');
 }
 ```
 
@@ -488,7 +488,7 @@ xu@calypso:~/ach$ php artisan optimize
 
 Добавляем папку `publig/img/user` для хранения аватарок пользователей
 
-Добавляем папку `publig/img/achievment` для хранения картинок достижений
+Добавляем папку `publig/img/achievement` для хранения картинок достижений
 
 Кладём в каждую из этих папок файл `.gitignore` (чтобы картинки не попадали в репозиторий, но сами папки создавались) со следующим содержимым
 ```
@@ -501,11 +501,11 @@ xu@calypso:~/ach$ php artisan optimize
 xu@calypso:~/ach$ composer require fzaninotto/faker:1.4.*@dev
 ```
 
-Создаём файл `app/database/seeds/AchievmentSeeder.php`
+Создаём файл `app/database/seeds/AchievementSeeder.php`
 ```php
 <?php
 
-class AchievmentSeeder extends Seeder
+class AchievementSeeder extends Seeder
 {
     /** @var \Faker\Generator */
     protected $_faker;
@@ -518,7 +518,7 @@ class AchievmentSeeder extends Seeder
     public function run()
     {
         $usersCount = 16;
-        $achievmentsCount = 10;
+        $achievementsCount = 10;
         $beardFrequency = 4; // на сколько мальчишек один бородач
         $defaultPassword = '123123';
 
@@ -533,18 +533,18 @@ class AchievmentSeeder extends Seeder
         );
 
         $userImageDirectory = 'public/img/user/';
-        $achievmentImageDirectory = 'public/img/achievment/';
+        $achievementImageDirectory = 'public/img/achievement/';
 
         // Удаляем предыдущие данные
         DB::table('user_groups')->delete();
-        DB::table('achievment_groups')->delete();
-        DB::table('user_achievments')->delete();
+        DB::table('achievement_groups')->delete();
+        DB::table('user_achievements')->delete();
         DB::table('groups')->delete();
-        DB::table('achievments')->delete();
+        DB::table('achievements')->delete();
         DB::table('users')->delete();
 
         $this->_cleanImageDirectory($userImageDirectory);
-        $this->_cleanImageDirectory($achievmentImageDirectory);
+        $this->_cleanImageDirectory($achievementImageDirectory);
 
         /** @var Group[] $groups */
         $groups = array();
@@ -557,22 +557,22 @@ class AchievmentSeeder extends Seeder
             ));
         }
 
-        /** @var Achievment[] $achievments */
-        $achievments = array();
+        /** @var Achievement[] $achievements */
+        $achievements = array();
 
-        for ($i = 0; $i < $achievmentsCount; $i++) {
-            $achievment = Achievment::create(array(
+        for ($i = 0; $i < $achievementsCount; $i++) {
+            $achievement = Achievement::create(array(
                 'depth' => $this->_faker->numberBetween(0, 100),
                 'outlook' => $this->_faker->numberBetween(0, 100),
                 'interaction' => $this->_faker->numberBetween(0, 100),
 
                 'title' => $this->_faker->sentence(3),
                 'description' => $this->_faker->paragraph(),
-                'image' => $this->_faker->image($achievmentImageDirectory, 100, 100, 'abstract', false),
+                'image' => $this->_faker->image($achievementImageDirectory, 100, 100, 'abstract', false),
             ));
 
-            $achievment->groups()->sync($this->_getRandomIds($groups));
-            $achievments[] = $achievment;
+            $achievement->groups()->sync($this->_getRandomIds($groups));
+            $achievements[] = $achievement;
         }
 
         // Добавляем администратора
@@ -584,9 +584,9 @@ class AchievmentSeeder extends Seeder
             'image' => $this->_faker->image($userImageDirectory, 100, 100, 'people', false),
         );
         $userGroupIds = array($groups['developer']->id, $groups['male']->id);
-        $userAchievmentIds = $this->_getRandomIds($achievments, 4);
+        $userAchievementIds = $this->_getRandomIds($achievements, 4);
 
-        $this->_createUser($userData, $userGroupIds, $userAchievmentIds);
+        $this->_createUser($userData, $userGroupIds, $userAchievementIds);
 
         // Добавляем остальных тестовых пользователей
         for ($i = 0; $i < $usersCount; $i++) {
@@ -603,30 +603,30 @@ class AchievmentSeeder extends Seeder
 
             $position = $this->_faker->randomElement(array('developer', 'manager', 'designer'));
             $userGroupIds = array($groups[$gender]->id, $groups[$position]->id);
-            $userAchievmentIds = $this->_getRandomIds($achievments, 4);
+            $userAchievementIds = $this->_getRandomIds($achievements, 4);
 
             // добавляем немного бородачей
             if ($gender === 'male' && rand(1, $beardFrequency) === 1) {
                 array_push($userGroupIds, $groups['beard']->id);
             }
 
-            $this->_createUser($userData, $userGroupIds, $userAchievmentIds);
+            $this->_createUser($userData, $userGroupIds, $userAchievementIds);
         }
     }
 
     /**
      * @param array $data данные, которые прямиком отправляются в User::create($data)
      * @param array $groupIds массив id групп
-     * @param array $achievmentIds массив id достижений
+     * @param array $achievementIds массив id достижений
      */
-    protected function _createUser($data, $groupIds, $achievmentIds)
+    protected function _createUser($data, $groupIds, $achievementIds)
     {
         $user = User::create($data);
         $user->groups()->sync($groupIds);
 
-        if (!empty($achievmentIds)) { // тут, в отличии от groups нужна проверка, т.к. array_fill вторым параметром  принимает только integer > 0
-            $user->achievments()->sync(
-                array_combine($achievmentIds, array_fill(0, count($achievmentIds), array('is_approved' => true)))
+        if (!empty($achievementIds)) { // тут, в отличии от groups нужна проверка, т.к. array_fill вторым параметром  принимает только integer > 0
+            $user->achievements()->sync(
+                array_combine($achievementIds, array_fill(0, count($achievementIds), array('is_approved' => true)))
             );
         }
     }
@@ -669,9 +669,9 @@ class AchievmentSeeder extends Seeder
 }
 ```
 
-а в файле `app/database/seeds/AchievmentSeeder.php` добавляем вызов генерации тестовых данных
+а в файле `app/database/seeds/AchievementSeeder.php` добавляем вызов генерации тестовых данных
 ```php
-$this->call('AchievmentSeeder');
+$this->call('AchievementSeeder');
 ```
 
 ### Commit b9c4bc7 test data
@@ -683,24 +683,24 @@ $this->call('AchievmentSeeder');
  * `/` список достижений
  * `/users` список пользователей
  * `/users/{id}` страница пользователя, где id -- идентификатор пользователя
- * `/achievments` тоже список достижений (?)
- * `/achievments/{id}` страница достижения
+ * `/achievements` тоже список достижений (?)
+ * `/achievements/{id}` страница достижения
 
 в файле `app/routes.php` удаляем текущий роут для пути `/` и прописываем наши роуты
 
 ```php
-Route::get('/', 'AchievmentController@getMain');
+Route::get('/', 'AchievementController@getMain');
 
-Route::get('users', 'AchievmentController@getUsers');
-Route::get('users/{id}', 'AchievmentController@getUser');
+Route::get('users', 'AchievementController@getUsers');
+Route::get('users/{id}', 'AchievementController@getUser');
 
-Route::get('achievments', 'AchievmentController@getAchievments');
-Route::get('achievments/{id}', 'AchievmentController@getAchievment');
+Route::get('achievements', 'AchievementController@getAchievements');
+Route::get('achievements/{id}', 'AchievementController@getAchievement');
 ```
 
-Так как страниц не очень много, то все их заносим в один контроллер `AchievmentController`
+Так как страниц не очень много, то все их заносим в один контроллер `AchievementController`
 
-Создаём файл `app/controllers/AchievmentController.php` со следующим содержимым
+Создаём файл `app/controllers/AchievementController.php` со следующим содержимым
 (если действие контроллера возвращает массив, то приложение возвращает ответ в формате `json` с соответствующим 
 хедером `application/json`, при это eloquent модели тоже корректно преобразовываются, с исключенными `hidden` полями, 
 которые мы установили в соответствующей модели, как,например, поле `password`)
@@ -708,7 +708,7 @@ Route::get('achievments/{id}', 'AchievmentController@getAchievment');
 ```php
 <?php
 
-class AchievmentController extends BaseController
+class AchievementController extends BaseController
 {
 
     public function getMain()
@@ -733,21 +733,21 @@ class AchievmentController extends BaseController
         return $user;
     }
 
-    public function getAchievments()
+    public function getAchievements()
     {
-        $achievments = Achievment::all();
+        $achievements = Achievement::all();
 
-        return $achievments;
+        return $achievements;
     }
 
-    public function getAchievment($id)
+    public function getAchievement($id)
     {
-        $achievment = Achievment::find($id);
-        if ($achievment === null) {
+        $achievement = Achievement::find($id);
+        if ($achievement === null) {
             App::abort(404, 'Page not found');
         }
 
-        return $achievment;
+        return $achievement;
     }
 }
 ```
@@ -785,8 +785,8 @@ class AchievmentController extends BaseController
         <div class="media-body">
             <h4 class="media-heading"><a href="/users/{{{ $user->id }}}">{{{ $user->name }}}</a></h4>
             <ul class="list-inline">
-                @foreach ($user->achievments as $achievment)
-                <li><a href="/achievments/{{{ $achievment->id }}}" title="{{{ $achievment->title }}}"><img class="img-thumbnail achievment-image-icon" src="/img/achievment/{{{ $achievment->image }}}" /></a></li>
+                @foreach ($user->achievements as $achievement)
+                <li><a href="/achievements/{{{ $achievement->id }}}" title="{{{ $achievement->title }}}"><img class="img-thumbnail achievement-image-icon" src="/img/achievement/{{{ $achievement->image }}}" /></a></li>
                 @endforeach
             </ul>
 
@@ -801,14 +801,14 @@ class AchievmentController extends BaseController
 @stop
 ```
 
-По аналогии создадим виды `app/views/user/user_show.blade.php`, `app/views/achievment/achievment_show.blade.php`, `app/views/achievment/achievment_list.blade.php` 
+По аналогии создадим виды `app/views/user/user_show.blade.php`, `app/views/achievement/achievement_show.blade.php`, `app/views/achievement/achievement_list.blade.php` 
 
-Изменим контроллер `app/controllers/AchievmentController.php`, чтобы он начал работать с созданными видами:
+Изменим контроллер `app/controllers/AchievementController.php`, чтобы он начал работать с созданными видами:
 
 ```php
 <?php
 
-class AchievmentController extends BaseController
+class AchievementController extends BaseController
 {
 
     public function getMain()
@@ -833,21 +833,21 @@ class AchievmentController extends BaseController
         return View::make('user.user_show', array('user' => $user));
     }
 
-    public function getAchievments()
+    public function getAchievements()
     {
-        $achievments = Achievment::all();
+        $achievements = Achievement::all();
 
-        return View::make('achievment.achievment_list', array('achievments' => $achievments));
+        return View::make('achievement.achievement_list', array('achievements' => $achievements));
     }
 
-    public function getAchievment($id)
+    public function getAchievement($id)
     {
-        $achievment = Achievment::find($id);
-        if ($achievment === null) {
+        $achievement = Achievement::find($id);
+        if ($achievement === null) {
             App::abort(404, 'Page not found');
         }
 
-        return View::make('achievment.achievment_show', array('achievment' => $achievment));
+        return View::make('achievement.achievement_show', array('achievement' => $achievement));
     }
 }
 ```
@@ -857,20 +857,20 @@ class AchievmentController extends BaseController
 А там мы увидим, что страница `/users` делает 35 (жуть) запросов (при 16 пользователях) к базе данных. 
 Дело в том, что каждый раз, когда мы обращаемся к связанным сущностям eloquent-модели, выполняется запрос к базе, получающий эти связанные сущности.
 Но это легко исправить, достаточно заменить:
-* `User::all()` на `User::with('achievments', 'groups')->get()`
-* `Achievment::all()` на `Achievment::with('users', 'groups')->get()`
-* `Achievment::find($id)` на `Achievment::with('users', 'groups')->find($id)` (при запросе одной моделей, нет плюсов в использовании with -- и так и так выполняются три запроса, но это понадобится нам чуть ниже)
-* `User::find($id)` на `User::with('achievments', 'groups')->find($id)`
+* `User::all()` на `User::with('achievements', 'groups')->get()`
+* `Achievement::all()` на `Achievement::with('users', 'groups')->get()`
+* `Achievement::find($id)` на `Achievement::with('users', 'groups')->find($id)` (при запросе одной моделей, нет плюсов в использовании with -- и так и так выполняются три запроса, но это понадобится нам чуть ниже)
+* `User::find($id)` на `User::with('achievements', 'groups')->find($id)`
 
 и мы получим всего три запроса (для users: выборка всех пользователей, выборка всех групп этих пользователей и выборка всех достижений этих пользователей)
 
-Теперь открываем страницу `/achievments/{id}` и видим, что даже после замены выполняются десятки запросов. Это понятно, мы подгрузили только 
+Теперь открываем страницу `/achievements/{id}` и видим, что даже после замены выполняются десятки запросов. Это понятно, мы подгрузили только 
 связанных пользователей, но не их связанные группы и достижения, поэтому для каждого пользователя в списке, будет выполняться ещё по два запроса. 
 И кажется, что вот тут-то всё кончено и придётся писать что-то громоздкое собственными руками. Но это не так :) В laravel и для этого есть немного магии, 
 а именно вот такая конструкция:
 
 ```php
-Achievment::with('users.groups', 'user.achievments', 'groups')->find($id)
+Achievement::with('users.groups', 'user.achievements', 'groups')->find($id)
 ```
 
 Итого пять запросов независимо от количества пользователей, привязанных к данному достижению.
@@ -1022,7 +1022,7 @@ Route::get('logout', 'AuthController@logout');
 
 `Auth::check()` -- проверяет, прошёл ли человек аутентификацию
 
-Теперь можно устроить страницу `/my` пользователя, воспользовавшись методом `Auth::user()`. Добавим соответствующий метод в `AchievmentController`
+Теперь можно устроить страницу `/my` пользователя, воспользовавшись методом `Auth::user()`. Добавим соответствующий метод в `AchievementController`
 
 ```php
 public function getMy()
@@ -1039,7 +1039,7 @@ public function getMy()
 И добавим новый роут
 
 ```php
-Route::get('my', array('before' => 'auth', 'uses' => 'AchievmentController@getMy'));
+Route::get('my', array('before' => 'auth', 'uses' => 'AchievementController@getMy'));
 ```
 
 Тут мы воспользовались встроенным фильтром `auth` (находится в файле `app/filters.php`), который проверяет выполнил ли пользователь вход 
